@@ -2,6 +2,8 @@
 
 def split_list(alist, chunks=1):
     length = len(alist)
+    for i in range(chunks):
+        print (i*length // chunks), ((i+1)*length // chunks)
     return [ alist[i*length // chunks: (i+1)*length // chunks] 
              for i in range(chunks) ]
 
@@ -60,25 +62,26 @@ def print_table(table):
     for row in table:
         print row
 
+generate_table(3, 5, 'abcdefghij')
 # happy path
-print_table(generate_table(1, 1, 'a'))
-print '===='
-print_table(generate_table(1, 2, 'a'))
-print '===='
-print_table(generate_table(1, 2, 'abc'))
-print '===='
-print_table(generate_table(2, 2, 'abc'))
-print '===='
-print_table(generate_table(2, 3, 'abc'))
-print '===='
-print_table(generate_table(5, 2, 'abc'))
-print '===='
-print_table(generate_table(8, 2, 'abc'))
-print '===='
-print_table(generate_table(9, 2, 'abc'))
-print '===='
-print_table(generate_table(9, 3, 'abc'))
-print '===='
-print_table(generate_table(9, 5, 'ab'))
-print '===='
-print_table(generate_table(12, 5, 'ab'))
+# print_table(generate_table(1, 1, 'a'))
+# print '===='
+# print_table(generate_table(1, 2, 'a'))
+# print '===='
+# print_table(generate_table(1, 2, 'abc'))
+# print '===='
+# print_table(generate_table(2, 2, 'abc'))
+# print '===='
+# print_table(generate_table(2, 3, 'abc'))
+# print '===='
+# print_table(generate_table(5, 2, 'abc'))
+# print '===='
+# print_table(generate_table(8, 2, 'abc'))
+# print '===='
+# print_table(generate_table(9, 2, 'abc'))
+# print '===='
+# print_table(generate_table(9, 3, 'abc'))
+# print '===='
+# print_table(generate_table(9, 5, 'ab'))
+# print '===='
+# print_table(generate_table(12, 5, 'ab'))
