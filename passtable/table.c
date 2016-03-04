@@ -77,9 +77,9 @@ static int compare_entries(const void *a, const void *b)
   return (ea->first > eb->first) - (ea->first < eb->first);
 }
 
-static void sort(struct entry *e, size_t chunks)
+static void sort(struct entry *e, size_t streams)
 {
-    qsort(e, chunks, sizeof(struct entry), compare_entries);
+    qsort(e, streams, sizeof(struct entry), compare_entries);
 }
 
 /**
@@ -91,31 +91,31 @@ static struct entry *get(struct table *t, size_t row, size_t col)
 }
 
 /**
- * Split the given sequence of length 'len' in chunks.
- * i.e.: 1,2,3,4,5 in 3 chunks ==> [1,2],[3,4],[5]
+ * Split the given sequence of length 'len' in streams.
+ * i.e.: 1,2,3,4,5 in 3 streams ==> [1,2],[3,4],[5]
  */
-static void split_less(size_t seqlen, size_t chunks, struct entry *t)
+static void split_less(size_t seqlen, size_t streams, struct entry *t)
 {
-    for (size_t i = 0; i < chunks; ++i) {
-        t[i].first = (i * seqlen) / chunks;
-        t[i].last = ((i + 1) * seqlen) / chunks - 1;
+    for (size_t i = 0; i < streams; ++i) {
+        t[i].first = (i * seqlen) / streams;
+        t[i].last = ((i + 1) * seqlen) / streams - 1;
     }
 }
 
 /**
- * 1,2,3 in 4 chunks ==> [1],[1],[2],[3]
+ * 1,2,3 in 4 streams ==> [1],[1],[2],[3]
  */
-static void split_more(size_t seqlen, size_t chunks, struct entry *e)
+static void split_more(size_t seqlen, size_t streams, struct entry *e)
 {
-    for (size_t i = 0; i < chunks; ++i) {
+    for (size_t i = 0; i < streams; ++i) {
         e[i].first = i % seqlen;
         e[i].last = i % seqlen;
     }
-    sort(e, chunks);
+    sort(e, streams);
 }
 
 /**
- * 1,2,3,4 in 4 chunks ==> [1],[2],[3],[4]
+ * 1,2,3,4 in 4 streams ==> [1],[2],[3],[4]
  */
 static void split_equal(size_t seqlen, struct entry *e)
 {
@@ -126,19 +126,19 @@ static void split_equal(size_t seqlen, struct entry *e)
 }
 
 /**
- * Distribute sequence @seq in @chunks and store the result at @entry.
+ * Distribute sequence @seq in @streams and store the result at @entry.
  */
-static void distribute(size_t seqlen, size_t chunks, struct entry *entry)
+static void distribute(size_t seqlen, size_t streams, struct entry *entry)
 {
-    if (chunks == 1) {
+    if (streams == 1) {
         entry->first = 0;
         entry->last = seqlen - 1;
-    } else if (chunks == seqlen) {
+    } else if (streams == seqlen) {
         split_equal(seqlen, entry);
-    } else if (chunks > seqlen) {
-        split_more(seqlen, chunks, entry);
+    } else if (streams > seqlen) {
+        split_more(seqlen, streams, entry);
     } else
-        split_less(seqlen, chunks, entry);
+        split_less(seqlen, streams, entry);
 }
 
 /**
@@ -205,20 +205,19 @@ static void recurse(struct table *t, size_t count, struct entry *e)
 
 
 
-static void generate(size_t seqlen, size_t pwlen, size_t chunks,
+static void generate(size_t seqlen, size_t pwlen, size_t streams,
                      struct table **table)
 {
     struct table *t;
 
     /* TODO: sanitize input */
-    /* TODO: rename chunks --> streams */
     /* TODO: rename cols --> streams ????? */
     /* TODO: rename rows --> ?????? */
 
     t = calloc(1, sizeof(struct table));
 
     t->rows = pwlen;
-    t->cols = chunks;
+    t->cols = streams;
     t->entry = malloc(sizeof(struct entry) * t->rows * t->cols);
     t->seqlen = seqlen;
 
