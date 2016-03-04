@@ -163,7 +163,7 @@ static void entry_table_init(struct table *t, int first, int last)
 /**
  * Count the number of entries identical to @e on row @row.
  */
-static size_t count_identical(struct table *t, size_t row, const struct entry *e)
+static size_t uniq(struct table *t, size_t row, const struct entry *e)
 {
     size_t count = 0;
     struct entry *n = get(t, row, 0);
@@ -179,7 +179,7 @@ static size_t count_identical(struct table *t, size_t row, const struct entry *e
  * Count the number of entries identical to @e and consider @len
  * entries.
  */
-static size_t count_identical_from_entry(const struct entry *e, size_t len)
+static size_t uniq_from_entry(const struct entry *e, size_t len)
 {
     size_t count = 1;           /* first entry is always equal */
     for (size_t i = 1; i < len; ++i) {
@@ -198,7 +198,7 @@ static void recurse(struct table *t, size_t count, struct entry *e)
 
     size_t identical = 0;
     for (size_t i = 0; i < count; i += identical) {
-        identical = count_identical_from_entry(&e[i], count);
+        identical = uniq_from_entry(&e[i], count);
         recurse(t, identical, &e[i + t->cols]);
     }
 }
@@ -226,7 +226,7 @@ static void generate(size_t plen, size_t pwlen, size_t streams,
 
     size_t count = 0;
     for (size_t i = 0; i < t->cols; i+=count) {
-        count = count_identical(t, 0, &t->entry[i]);
+        count = uniq(t, 0, &t->entry[i]);
 
         /* if current entry has duplicates */
         if (count != 1) {
