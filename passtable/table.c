@@ -3,6 +3,9 @@
 #include <stdbool.h>
 
 /*
+ Algorithm
+ =========
+
  This algorithm distributes a pool of characters to 'n' password
  streams. These streams can then generate passwords that are mutually
  exclusive. For example:
@@ -29,6 +32,28 @@
        for (k = table[stream0, 0].first; k <= table[stream0, 0].last; ++k)
           str[2] = pool[k];
           do_stuff(str);
+
+  Entry table
+  ===========
+
+  In-memory representation:
+  +----+----+----+----+----+----+
+  |s0c0|s1c0|s0c1|s1c1|s0c2|s1c2|
+  +----+----+----+----+----+----+
+
+  Conceptual representation:
+
+   2 columns (streams)
+   ____+____
+  /         \
+  +----+----+ \
+  |s0c0|s1c0|  |
+  +----+----+  |
+  |s0c1|s1c1|  + 3 rows (characters)
+  +----+----+  |
+  |s0c2|s1c2|  |
+  +----+----+ /
+
  */
 
 struct entry {
