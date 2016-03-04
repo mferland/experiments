@@ -196,10 +196,10 @@ static void recurse(struct table *t, size_t count, struct entry *e)
 
     distribute(t->plen, count, e);
 
-    size_t identical = 0;
-    for (size_t i = 0; i < count; i += identical) {
-        identical = uniq_from_entry(&e[i], count);
-        recurse(t, identical, &e[i + t->cols]);
+    size_t u = 0;
+    for (size_t i = 0; i < count; i += u) {
+        u = uniq_from_entry(&e[i], count);
+        recurse(t, u, &e[i + t->cols]);
     }
 }
 
@@ -224,13 +224,13 @@ static void generate(size_t plen, size_t pwlen, size_t streams,
     /* create start point */
     distribute(plen, t->cols, t->entry);
 
-    size_t count = 0;
-    for (size_t i = 0; i < t->cols; i+=count) {
-        count = uniq(t, 0, &t->entry[i]);
+    size_t u = 0;
+    for (size_t i = 0; i < t->cols; i += u) {
+        u = uniq(t, 0, &t->entry[i]);
 
         /* if current entry has duplicates */
-        if (count != 1) {
-            recurse(t, count, get(t, 1, i));
+        if (u > 1) {
+            recurse(t, u, get(t, 1, i));
         }
     }
 
