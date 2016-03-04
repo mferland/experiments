@@ -49,7 +49,7 @@
   +----+----+ \
   |s0c0|s1c0|  |
   +----+----+  |
-  |s0c1|s1c1|  + 3 rows (characters)
+  |s0c1|s1c1|  + 3 rows (character positions)
   +----+----+  |
   |s0c2|s1c2|  |
   +----+----+ /
@@ -64,7 +64,7 @@ struct table {
     struct entry *entry;
     size_t rows;
     size_t cols;
-    size_t seqlen;
+    size_t plen;                /* pool length */
 };
 
 static int compare_entries(const void *a, const void *b)
@@ -94,22 +94,22 @@ static struct entry *get(struct table *t, size_t row, size_t col)
  * Split the given sequence of length 'len' in streams.
  * i.e.: 1,2,3,4,5 in 3 streams ==> [1,2],[3,4],[5]
  */
-static void split_less(size_t seqlen, size_t streams, struct entry *t)
+static void split_less(size_t plen, size_t streams, struct entry *t)
 {
     for (size_t i = 0; i < streams; ++i) {
-        t[i].first = (i * seqlen) / streams;
-        t[i].last = ((i + 1) * seqlen) / streams - 1;
+        t[i].first = (i * plen) / streams;
+        t[i].last = ((i + 1) * plen) / streams - 1;
     }
 }
 
 /**
  * 1,2,3 in 4 streams ==> [1],[1],[2],[3]
  */
-static void split_more(size_t seqlen, size_t streams, struct entry *e)
+static void split_more(size_t plen, size_t streams, struct entry *e)
 {
     for (size_t i = 0; i < streams; ++i) {
-        e[i].first = i % seqlen;
-        e[i].last = i % seqlen;
+        e[i].first = i % plen;
+        e[i].last = i % plen;
     }
     sort(e, streams);
 }
@@ -117,9 +117,9 @@ static void split_more(size_t seqlen, size_t streams, struct entry *e)
 /**
  * 1,2,3,4 in 4 streams ==> [1],[2],[3],[4]
  */
-static void split_equal(size_t seqlen, struct entry *e)
+static void split_equal(size_t plen, struct entry *e)
 {
-    for (size_t i = 0; i < seqlen; ++i) {
+    for (size_t i = 0; i < plen; ++i) {
         e[i].first = i;
         e[i].last = i;
     }
@@ -128,17 +128,17 @@ static void split_equal(size_t seqlen, struct entry *e)
 /**
  * Distribute sequence @seq in @streams and store the result at @entry.
  */
-static void distribute(size_t seqlen, size_t streams, struct entry *entry)
+static void distribute(size_t plen, size_t streams, struct entry *entry)
 {
     if (streams == 1) {
         entry->first = 0;
-        entry->last = seqlen - 1;
-    } else if (streams == seqlen) {
-        split_equal(seqlen, entry);
-    } else if (streams > seqlen) {
-        split_more(seqlen, streams, entry);
+        entry->last = plen - 1;
+    } else if (streams == plen) {
+        split_equal(plen, entry);
+    } else if (streams > plen) {
+        split_more(plen, streams, entry);
     } else
-        split_less(seqlen, streams, entry);
+        split_less(plen, streams, entry);
 }
 
 /**
@@ -194,7 +194,7 @@ static void recurse(struct table *t, size_t count, struct entry *e)
     if (count == 1)
         return;
 
-    distribute(t->seqlen, count, e);
+    distribute(t->plen, count, e);
 
     size_t identical = 0;
     for (size_t i = 0; i < count; i += identical) {
@@ -203,9 +203,7 @@ static void recurse(struct table *t, size_t count, struct entry *e)
     }
 }
 
-
-
-static void generate(size_t seqlen, size_t pwlen, size_t streams,
+static void generate(size_t plen, size_t pwlen, size_t streams,
                      struct table **table)
 {
     struct table *t;
@@ -219,12 +217,12 @@ static void generate(size_t seqlen, size_t pwlen, size_t streams,
     t->rows = pwlen;
     t->cols = streams;
     t->entry = malloc(sizeof(struct entry) * t->rows * t->cols);
-    t->seqlen = seqlen;
+    t->plen = plen;
 
-    entry_table_init(t, 0, seqlen - 1);
+    entry_table_init(t, 0, plen - 1);
 
     /* create start point */
-    distribute(seqlen, t->cols, t->entry);
+    distribute(plen, t->cols, t->entry);
 
     size_t count = 0;
     for (size_t i = 0; i < t->cols; i+=count) {
