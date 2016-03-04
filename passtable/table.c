@@ -212,7 +212,7 @@ static void generate(size_t plen, size_t pwlen, size_t streams,
     /* TODO: rename cols --> streams ????? */
     /* TODO: rename rows --> ?????? */
 
-    t = calloc(1, sizeof(struct table));
+    t = malloc(sizeof(struct table));
 
     t->rows = pwlen;
     t->cols = streams;
