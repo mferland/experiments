@@ -10,6 +10,7 @@
  pool: a,b,c
 
  Distribute to 4 streams of 3 characters:
+          char0 char1 char2
  stream0: [a,a] [a,a] [a,c] --> aaa, baa, caa
  stream1: [a,a] [b,c] [a,c] --> aba, aca, bba, bca, cba, cca
  stream2: [b,b] [a,c] [a,c] --> aab, abb, acb, bab, bbb, bcb, cab, cbb, ccb
@@ -38,7 +39,6 @@ struct table {
     struct entry *entry;
     size_t rows;
     size_t cols;
-    const int *seq;
     size_t seqlen;
 };
 
@@ -69,22 +69,22 @@ static struct entry *get(struct table *t, size_t row, size_t col)
  * Split the given sequence of length 'len' in chunks.
  * i.e.: 1,2,3,4,5 in 3 chunks ==> [1,2],[3,4],[5]
  */
-static void split_less(const int *seq, size_t len, size_t chunks, struct entry *t)
+static void split_less(size_t seqlen, size_t chunks, struct entry *t)
 {
     for (size_t i = 0; i < chunks; ++i) {
-        t[i].first = seq[(i * len) / chunks];
-        t[i].last = seq[((i + 1) * len) / chunks - 1];
+        t[i].first = (i * seqlen) / chunks;
+        t[i].last = ((i + 1) * seqlen) / chunks - 1;
     }
 }
 
 /**
  * 1,2,3 in 4 chunks ==> [1],[1],[2],[3]
  */
-static void split_more(const int *seq, size_t len, size_t chunks, struct entry *e)
+static void split_more(size_t seqlen, size_t chunks, struct entry *e)
 {
     for (size_t i = 0; i < chunks; ++i) {
-        e[i].first = seq[i % len];
-        e[i].last = seq[i % len];
+        e[i].first = i % seqlen;
+        e[i].last = i % seqlen;
     }
     sort(e, chunks);
 }
@@ -92,28 +92,28 @@ static void split_more(const int *seq, size_t len, size_t chunks, struct entry *
 /**
  * 1,2,3,4 in 4 chunks ==> [1],[2],[3],[4]
  */
-static void split_equal(const int *seq, size_t len, struct entry *e)
+static void split_equal(size_t seqlen, struct entry *e)
 {
-    for (size_t i = 0; i < len; ++i) {
-        e[i].first = seq[i];
-        e[i].last = seq[i];
+    for (size_t i = 0; i < seqlen; ++i) {
+        e[i].first = i;
+        e[i].last = i;
     }
 }
 
 /**
  * Distribute sequence @seq in @chunks and store the result at @entry.
  */
-static void distribute(const int *seq, size_t len, size_t chunks, struct entry *entry)
+static void distribute(size_t seqlen, size_t chunks, struct entry *entry)
 {
     if (chunks == 1) {
-        entry->first = seq[0];
-        entry->last = seq[len - 1];
-    } else if (chunks == len) {
-        split_equal(seq, len, entry);
-    } else if (chunks > len) {
-        split_more(seq, len, chunks, entry);
+        entry->first = 0;
+        entry->last = seqlen - 1;
+    } else if (chunks == seqlen) {
+        split_equal(seqlen, entry);
+    } else if (chunks > seqlen) {
+        split_more(seqlen, chunks, entry);
     } else
-        split_less(seq, len, chunks, entry);
+        split_less(seqlen, chunks, entry);
 }
 
 /**
@@ -169,7 +169,7 @@ static void recurse(struct table *t, size_t count, struct entry *e)
     if (count == 1)
         return;
 
-    distribute(t->seq, t->seqlen, count, e);
+    distribute(t->seqlen, count, e);
 
     size_t identical = 0;
     for (size_t i = 0; i < count; i += identical) {
@@ -178,26 +178,29 @@ static void recurse(struct table *t, size_t count, struct entry *e)
     }
 }
 
-static void generate(const int *seq, size_t len, size_t pwlen,
-                     size_t chunks, struct table **table)
+
+
+static void generate(size_t seqlen, size_t pwlen, size_t chunks,
+                     struct table **table)
 {
     struct table *t;
 
     /* TODO: sanitize input */
-    /* TODO: do we really need the sequence? */
+    /* TODO: rename chunks --> streams */
+    /* TODO: rename cols --> streams ????? */
+    /* TODO: rename rows --> ?????? */
 
     t = calloc(1, sizeof(struct table));
 
     t->rows = pwlen;
     t->cols = chunks;
     t->entry = malloc(sizeof(struct entry) * t->rows * t->cols);
-    t->seq = seq;
-    t->seqlen = len;
+    t->seqlen = seqlen;
 
-    entry_table_init(t, 0, len - 1);
+    entry_table_init(t, 0, seqlen - 1);
 
     /* create start point */
-    distribute(seq, len, t->cols, t->entry);
+    distribute(seqlen, t->cols, t->entry);
 
     size_t count = 0;
     for (size_t i = 0; i < t->cols; i+=count) {
@@ -234,30 +237,29 @@ static void print_table(struct table *t)
 
 int main(int argc, char *argv[])
 {
-    const int seq[] = {0, 1, 2, 3, 4};
     struct table *table;
     struct entry *e;
 
     e = malloc(sizeof(struct entry) * 6); /* allocate for largest */
 
-    distribute(seq, 5, 3, e);
+    distribute(5, 3, e);
     print_entries(e, 3);
 
-    distribute(seq, 5, 4, e);
+    distribute(5, 4, e);
     print_entries(e, 4);
 
-    distribute(seq, 5, 5, e);
+    distribute(5, 5, e);
     print_entries(e, 5);
 
-    distribute(seq, 5, 6, e);
+    distribute(5, 6, e);
     print_entries(e, 6);
 
-    distribute(seq, 5, 1, e);
+    distribute(5, 1, e);
     print_entries(e, 1);
 
     free(e);
 
-    generate(seq, 3, 5, 32, &table);
+    generate(3, 5, 32, &table);
     print_table(table);
     free(table->entry);
     free(table);
