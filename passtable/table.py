@@ -2,8 +2,6 @@
 
 def split_list(alist, chunks=1):
     length = len(alist)
-    for i in range(chunks):
-        print (i*length // chunks), ((i+1)*length // chunks)
     return [ alist[i*length // chunks: (i+1)*length // chunks] 
              for i in range(chunks) ]
 
@@ -58,11 +56,25 @@ def generate_table(threads, pwlen, pool):
                 table.append(r)
     return table
 
+def find_nearest_match(table, firstpw):
+    nearest = []
+    for row in table:
+        tmp = ''
+        for i, e in enumerate(row):
+            if firstpw[i] in e:
+                tmp += firstpw[i]
+            elif abs(ord(firstpw[i]) - ord(e[0])) > abs(ord(firstpw[i]) - ord(e[-1])):
+                tmp += e[-1]
+            else:
+                tmp += e[0]
+        nearest.append(tmp)
+    print nearest
+
 def print_table(table):
     for row in table:
         print row
 
-generate_table(3, 5, 'abcdefghij')
+# generate_table(3, 5, 'abcdefghij')
 # happy path
 # print_table(generate_table(1, 1, 'a'))
 # print '===='
@@ -70,11 +82,12 @@ generate_table(3, 5, 'abcdefghij')
 # print '===='
 # print_table(generate_table(1, 2, 'abc'))
 # print '===='
-# print_table(generate_table(2, 2, 'abc'))
-# print '===='
-# print_table(generate_table(2, 3, 'abc'))
-# print '===='
-# print_table(generate_table(5, 2, 'abc'))
+print_table(generate_table(2, 2, 'abc'))
+print '===='
+print_table(generate_table(2, 3, 'abc'))
+print '===='
+print_table(generate_table(16, 5, 'abcde'))
+find_nearest_match(generate_table(16, 5, 'abcde'), 'aabbc')
 # print '===='
 # print_table(generate_table(8, 2, 'abc'))
 # print '===='
