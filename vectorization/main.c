@@ -10,8 +10,10 @@
 */
 
 #include <stdint.h>
+#include <stdio.h>
+#include "crc32.h"
 
-static const uint8_t vdata[8 * 12] = {
+static const uint32_t vdata[8 * 12] = {
     0x76, 0x50, 0xc7, 0x3a, 0x28, 0xe8, 0x60, 0x93,
     0xb3, 0xae, 0x7e, 0xa8, 0xa7, 0x9f, 0x57, 0x51,
     0xed, 0xbb, 0x19, 0x46, 0xf3, 0x9f, 0xea, 0xca,
@@ -23,7 +25,7 @@ static const uint8_t vdata[8 * 12] = {
     0xdf, 0x1a, 0xee, 0x6e, 0x43, 0x90, 0xe0, 0x03,
     0xeb, 0x6f, 0xbd, 0x2a, 0xc6, 0x16, 0xf5, 0xd6,
     0x4d, 0xb9, 0xe3, 0x28, 0x29, 0x3d, 0x86, 0x38,
-    0x78, 0xbb, 0xf2, 0x15, 0x10, 0xd2, 0xaf, 0x6d
+    0x78, 0xbb, 0xf2, 0x15, 0x10, 0xd2, 0xaf, 0x6d,
 };
 
 struct zc_key {
@@ -35,46 +37,62 @@ struct zc_key {
 #define KEY0 0x12345678
 #define KEY1 0x23456789
 #define KEY2 0x34567890
+#define MULT 134775813u
 
-static uint32_t k0 = KEY0;
-static uint32_t k1 = KEY1;
-static uint32_t k2 = KEY2;
+/* static uint32_t k0 = KEY0; */
+/* static uint32_t k1 = KEY1; */
+/* static uint32_t k2 = KEY2; */
 
-static inline uint8_t decrypt_byte(uint32_t k)
+static inline uint32_t decrypt_byte(uint32_t k)
 {
-    uint16_t tmp =  k | 2;
-    return ((tmp * (tmp ^ 1)) >> 8);
+    uint32_t tmp =  (k | 2) & 0xffff;
+    return ((tmp * (tmp ^ 1)) >> 8) & 0xff;
 }
 
-static inline void update_keys(char c, struct zc_key *ksrc, struct zc_key *kdst)
+static inline void update_keys(char c, uint32_t *k0, uint32_t *k1, uint32_t *k2)
 {
-    kdst->key0 = crc32(ksrc->key0, c);
-    kdst->key1 = (ksrc->key1 + (kdst->key0 & 0x000000ff)) * MULT + 1;
-    kdst->key2 = crc32(ksrc->key2, kdst->key1 >> 24);
+   *k0 = crc32(*k0, c);
+   *k1 = (*k1 + (*k0 & 0x000000ff)) * MULT + 1;
+   *k2 = crc32(*k2, *k1 >> 24);
+}
+
+static inline void init_encryption_keys(const char *pw, uint32_t *k0, uint32_t *k1, uint32_t *k2)
+{
+    size_t i = 0;
+    *k0 = KEY0;
+    *k1 = KEY1;
+    *k2 = KEY2;
+    while (pw[i] != '\0') {
+        update_keys(pw[i], k0, k1, k2);
+        ++i;
+    }
 }
 
 int main(int argc, char *argv[])
 {
-    uint8_t rdata[8 * 12] = { 0 };
-    struct zc_key key[8] = { 0 };
-    uint8_t c;
+    uint32_t rdata[8 * 12];
+    uint32_t b0, b1, b2;
+    uint32_t k0[8], k1[8], k2[8 * 12];
+
+    init_encryption_keys(argv[1], &b0, &b1, &b2);
+
+    for (uint32_t i = 0; i < 8; ++i) {
+        k0[i] = b0;
+        k1[i] = b1;
+        k2[i] = b2;
+    }
 
     for (uint32_t i = 0; i < 12; ++i) {
-        c = decrypt_byte(k2);
 
-        /* vectorize... */
         for (uint32_t j = 0; j < 8; ++j) {
-            rdata[i * 12 + j] = vdata[i * 12 + j] * c;
+            rdata[i * 8 + j] = decrypt_byte(k2[i * 8 + j]) ^ vdata[i * 8 + j];
         }
 
-        update_keys(rdata[i * 12 + 0], );
-        update_keys(rdata[i * 12 + 1]);
-        update_keys(rdata[i * 12 + 2]);
-        update_keys(rdata[i * 12 + 3]);
-        update_keys(rdata[i * 12 + 4]);
-        update_keys(rdata[i * 12 + 5]);
-        update_keys(rdata[i * 12 + 6]);
-        update_keys(rdata[i * 12 + 7]);
+        for (uint32_t j = 0; j < 8; ++j) {
+            update_keys(rdata[i * 8 + j], &k0[j], &k1[j], &k2[j]);
+        }
     }
+
+    printf("0x%x, 0x%x, 0x%x\n", k0[7], k1[7], k2[7]);
     return 0;
 }
