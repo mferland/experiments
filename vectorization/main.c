@@ -11,9 +11,10 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "crc32.h"
 
-static const uint32_t vdata[8 * 12] = {
+static const uint32_t _vdata[8 * 12] = {
     0x76, 0x50, 0xc7, 0x3a, 0x28, 0xe8, 0x60, 0x93,
     0xb3, 0xae, 0x7e, 0xa8, 0xa7, 0x9f, 0x57, 0x51,
     0xed, 0xbb, 0x19, 0x46, 0xf3, 0x9f, 0xea, 0xca,
@@ -38,6 +39,7 @@ struct zc_key {
 #define KEY1 0x23456789
 #define KEY2 0x34567890
 #define MULT 134775813u
+#define N 32
 
 /* static uint32_t k0 = KEY0; */
 /* static uint32_t k1 = KEY1; */
@@ -49,7 +51,7 @@ static inline uint32_t decrypt_byte(uint32_t k)
     return ((tmp * (tmp ^ 1)) >> 8) & 0xff;
 }
 
-static inline void update_keys(char c, uint32_t *k0, uint32_t *k1, uint32_t *k2)
+static inline void update_keys(uint32_t c, uint32_t *k0, uint32_t *k1, uint32_t *k2)
 {
    *k0 = crc32(*k0, c);
    *k1 = (*k1 + (*k0 & 0x000000ff)) * MULT + 1;
@@ -70,29 +72,38 @@ static inline void init_encryption_keys(const char *pw, uint32_t *k0, uint32_t *
 
 int main(int argc, char *argv[])
 {
-    uint32_t rdata[8 * 12];
+    uint32_t *rdata;
+    uint32_t *vdata;
     uint32_t b0, b1, b2;
-    uint32_t k0[8], k1[8], k2[8 * 12];
+    uint32_t k0[N], k1[N], *k2;
+
+    rdata = malloc(N * 12 * sizeof(uint32_t));
+    vdata = malloc(N * 12 * sizeof(uint32_t));
+    k2 = malloc(N * sizeof(uint32_t));
+
+    for (size_t i = 0; i < N * 12; ++i) {
+        vdata[i] = _vdata[i];
+    }
 
     init_encryption_keys(argv[1], &b0, &b1, &b2);
 
-    for (uint32_t i = 0; i < 8; ++i) {
+    for (uint32_t i = 0; i < N; ++i) {
         k0[i] = b0;
         k1[i] = b1;
         k2[i] = b2;
     }
 
-    for (uint32_t i = 0; i < 12; ++i) {
+    for (size_t i = 0; i < 12; ++i) {
 
-        for (uint32_t j = 0; j < 8; ++j) {
-            rdata[i * 8 + j] = decrypt_byte(k2[i * 8 + j]) ^ vdata[i * 8 + j];
+        for (size_t j = 0; j < N; ++j) {
+            rdata[i * N + j] = decrypt_byte(k2[j]) ^ vdata[i * N + j];
         }
 
-        for (uint32_t j = 0; j < 8; ++j) {
-            update_keys(rdata[i * 8 + j], &k0[j], &k1[j], &k2[j]);
+        for (size_t j = 0; j < N; ++j) {
+            update_keys(rdata[i * N + j], &k0[j], &k1[j], &k2[j]);
         }
     }
 
-    printf("0x%x, 0x%x, 0x%x\n", k0[7], k1[7], k2[7]);
+    printf("0x%x, 0x%x, 0x%x\n", k0[N-1], k1[N-1], k2[N-1]);
     return 0;
 }
