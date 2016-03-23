@@ -1,0 +1,105 @@
+;; Look & feel
+(setq inhibit-startup-screen t)
+(set-default-font "ProggyCleanTT-12")
+(scroll-bar-mode -1)
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(setq display-time-default-load-average nil)
+(setq display-time-day-and-date t
+      display-time-24hr-format t)
+(display-time)
+(transient-mark-mode 1)
+(show-paren-mode 1)
+(setq-default indicate-buffer-boundaries 'left)
+(setq-default indicate-empty-lines +1)
+(setq-default indent-tabs-mode nil)
+
+;; ido-mode
+(setq ido-enable-flex-matching t)
+(setq ido-everywhere t)
+(ido-mode 1)
+
+;; auto-package
+(add-to-list 'load-path "~/.emacs.d/auto-package")
+(require 'auto-package)
+
+;; nyan-cat
+(when (window-system)
+  (add-to-list 'load-path "~/.emacs.d/nyan-mode")
+  (require 'nyan-mode)
+  (nyan-mode))
+
+;; theme
+(load-theme 'zenburn t)
+
+;; yasnippet
+(yas-global-mode 1)
+
+;; expand-region
+(require 'expand-region)
+(global-set-key (kbd "C-=") 'er/expand-region)
+
+;; wgrep
+(require 'wgrep)
+
+;; dired listing using human readable sizes
+(setq dired-listing-switches "-alh")
+
+;; cmake
+(require 'cmake-mode)
+
+;; bb-mode
+(add-to-list 'load-path "~/.emacs.d/bb-mode")
+(require 'bb-mode)
+(setq auto-mode-alist (cons '("\\.bb$" . bb-mode) auto-mode-alist))
+(setq auto-mode-alist (cons '("\\.inc$" . bb-mode) auto-mode-alist))
+(setq auto-mode-alist (cons '("\\.bbappend$" . bb-mode) auto-mode-alist))
+(setq auto-mode-alist (cons '("\\.bbclass$" . bb-mode) auto-mode-alist))
+
+;; C++ hook
+(defun my-c++-mode-hook ()
+  (setq c-basic-offset 4)
+  (c-set-offset 'substatement-open 0)
+  (setq c-default-style "bsd")
+  (setq show-trailing-whitespace t)
+  (font-lock-add-keywords nil '(("\\<\\(FIXME\\|TODO\\|BUG\\):" 1 font-lock-warning-face t))))
+(add-hook 'c++-mode-hook 'my-c++-mode-hook)
+
+;; C hook
+(defun my-c-mode-hook ()
+  (setq c-basic-offset 4)
+  (c-set-offset 'substatement-open 0)
+  (setq c-default-style "bsd")
+  (setq show-trailing-whitespace t)
+  (font-lock-add-keywords nil '(("\\<\\(FIXME\\|TODO\\|BUG\\):" 1 font-lock-warning-face t)))
+  (setq flycheck-gcc-language-standard "gnu99"))
+(add-hook 'c-mode-hook 'my-c-mode-hook)
+
+(global-set-key (kbd "C-.") 'other-window)
+(global-auto-revert-mode t)
+
+;; AUCTex
+(setq TeX-auto-save t)
+(setq TeX-parse-self t)
+(setq-default TeX-master nil)
+(add-hook 'LaTeX-mode-hook 'visual-line-mode)
+(add-hook 'LaTeX-mode-hook 'flyspell-mode)
+(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(setq reftex-plug-into-AUCTeX t)
+(setq TeX-PDF-mode t)
+
+;; anzu-mode
+(require 'anzu)
+(global-anzu-mode)
+(global-set-key (kbd "M-%") 'anzu-query-replace)
+(global-set-key (kbd "C-M-%") 'anzu-query-replace-regexp)
+
+;; magit
+(setq magit-last-seen-setup-instructions "1.4.0")
+
+;; helm
+(add-to-list 'load-path "~/.emacs.d/async")
+(add-to-list 'load-path "~/.emacs.d/helm")
+(require 'helm-config)
+(helm-mode 1)
