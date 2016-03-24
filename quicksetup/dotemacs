@@ -1,6 +1,6 @@
 ;; Look & feel
 (setq inhibit-startup-screen t)
-(set-default-font "ProggyCleanTT-12")
+(set-default-font "DejaVu Sans Mono-9")
 (scroll-bar-mode -1)
 (menu-bar-mode -1)
 (tool-bar-mode -1)

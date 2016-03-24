@@ -14,6 +14,9 @@ sudo apt -y install emacs24
 sudo apt -y install texlive
 sudo apt -y install i3
 sudo apt -y install i3lock
+sudo apt -y install valgrind
+sudo apt -y install astyle
+sudp apt -y install cppcheck
 
 # install proggy font
 mkdir -p $HOME/.fonts
