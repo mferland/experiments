@@ -16,7 +16,8 @@ sudo apt -y install i3
 sudo apt -y install i3lock
 sudo apt -y install valgrind
 sudo apt -y install astyle
-sudp apt -y install cppcheck
+sudo apt -y install cppcheck
+sudo apt -y install gitk
 
 # install proggy font
 mkdir -p $HOME/.fonts
