@@ -1,7 +1,6 @@
 #!/bin/bash
 
 sudo apt update
-exit 0
 sudo apt -y upgrade
 sudo apt -y autoclean
 sudo apt -y autoremove
@@ -18,6 +17,10 @@ sudo apt -y install valgrind
 sudo apt -y install astyle
 sudo apt -y install cppcheck
 sudo apt -y install gitk
+sudo apt -y install autoconf
+sudo apt -y install automake
+sudo apt -y install libtool
+sudo apt -y install libtool-bin
 
 # install proggy font
 mkdir -p $HOME/.fonts
@@ -44,4 +47,3 @@ git clone https://github.com/jwiegley/emacs-async.git async
 cd
 
 exit 0
-
